@@ -9,7 +9,18 @@ Deploy **only** the `backend/` folder. Do not deploy the Next.js frontend to Rai
 3. Select **`swarang-gorhe/kindskin-pro`**.
 4. Railway may create a service — if it fails immediately, continue to step 2.
 
-## 2. Set root directory (required for monorepo)
+## 2. Root directory OR root Dockerfile (pick one)
+
+Railway must build the **backend**, not the whole monorepo.
+
+### Option A — Root Dockerfile (easiest, no dashboard setting)
+
+This repo includes a **root `Dockerfile`** that builds `backend/` automatically.
+Railway detects it and uses Docker instead of Railpack — **no Root Directory setting needed**.
+
+Just connect the GitHub repo and deploy. After push, click **Redeploy** on Railway.
+
+### Option B — Root Directory in dashboard
 
 1. Click your **service** (not the project name).
 2. Go to **Settings** tab.
@@ -20,7 +31,8 @@ Deploy **only** the `backend/` folder. Do not deploy the Next.js frontend to Rai
    ```
 5. Save. Railway will redeploy automatically.
 
-Without this, Railway looks at the repo root (no `requirements.txt`) and the build fails.
+Without Option A or B, Railpack scans the repo root, finds no Python app, and fails with
+`Railpack could not determine how to build the app`.
 
 ## 3. Generate a public URL
 
@@ -83,7 +95,8 @@ Redeploy Vercel after saving.
 
 | Error | Fix |
 |-------|-----|
-| `requirements.txt not found` | Root Directory must be `backend` |
+| `Railpack could not determine how to build` | Redeploy latest `main` — root `Dockerfile` fixes this. Or set Root Directory = `backend` |
+| `requirements.txt not found` | Root Directory must be `backend`, or use root Dockerfile on latest commit |
 | `ModuleNotFoundError: app` | Same — deploy from `backend/`, not repo root |
 | Health check failed | Check **Deploy Logs**; ensure `/health` returns 200 |
 | CORS errors in browser | Add your Vercel URL to `CORS_ORIGINS` on Railway |
