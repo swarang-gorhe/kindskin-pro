@@ -4,6 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
 import { streamChat, type ChatStreamEvent } from "@/lib/api";
+import { localChatStream } from "@/lib/chat-fallback";
 import { Button } from "@/components/ui/Button";
 
 type ProductLink = { slug: string; name: string };
@@ -42,22 +43,6 @@ export function ChatWidget() {
 
     setMessages((prev) => [...prev, { role: "assistant", content: "", products: [] }]);
 
-    try {
-      for await (const event of streamChat("/api/assistant/chat", { message: userMsg })) {
-        handleEvent(event);
-      }
-    } catch {
-      assistantContent =
-        "I'm having trouble connecting right now. Please try again or visit our Contact page.";
-      setMessages((prev) => {
-        const updated = [...prev];
-        updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-        return updated;
-      });
-    } finally {
-      setPhase("idle");
-    }
-
     function handleEvent(event: ChatStreamEvent) {
       if (event.type === "status") {
         setPhase(event.phase);
@@ -89,6 +74,28 @@ export function ChatWidget() {
         });
       }
     }
+
+    try {
+      for await (const event of streamChat("/api/assistant/chat", { message: userMsg })) {
+        handleEvent(event);
+      }
+    } catch {
+      try {
+        for await (const event of localChatStream(userMsg)) {
+          handleEvent(event as ChatStreamEvent);
+        }
+      } catch {
+        assistantContent =
+          "I'm here to help with KindSkin products and skincare tips. Visit /products to shop, /quiz for recommendations, or /contact for support.";
+        setMessages((prev) => {
+          const updated = [...prev];
+          updated[updated.length - 1] = { role: "assistant", content: assistantContent };
+          return updated;
+        });
+      }
+    } finally {
+      setPhase("idle");
+    }
   }
 
   return (
@@ -105,7 +112,7 @@ export function ChatWidget() {
         <div className="fixed bottom-24 right-6 z-50 flex w-[380px] max-w-[calc(100vw-3rem)] flex-col rounded-2xl bg-white shadow-2xl border border-forest/10 overflow-hidden">
           <div className="bg-forest px-4 py-3">
             <p className="text-sm font-medium text-cream">KindSkin Assistant</p>
-            <p className="text-xs text-cream/60">RAG-powered · Not medical advice</p>
+            <p className="text-xs text-cream/60">Skincare Q&A · Not medical advice</p>
           </div>
 
           <div className="flex-1 max-h-96 overflow-y-auto p-4 space-y-3">

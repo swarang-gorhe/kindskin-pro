@@ -1,11 +1,29 @@
+const DEFAULT_BACKEND = "https://ftw9rcd4.up.railway.app";
+
+/** Resolve API path — browser uses same-origin proxy to avoid CORS and localhost baked at build. */
+export function resolveApiPath(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  const subPath = normalized.replace(/^\/api\//, "");
+
+  if (typeof window !== "undefined") {
+    return `/backend-api/${subPath}`;
+  }
+
+  const backend =
+    process.env.BACKEND_URL ||
+    process.env.NEXT_PUBLIC_API_URL ||
+    DEFAULT_BACKEND;
+  return `${backend.replace(/\/$/, "")}/api/${subPath}`;
+}
+
 export const API_URL =
-  process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+  process.env.NEXT_PUBLIC_API_URL ?? DEFAULT_BACKEND;
 
 export async function apiFetch<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(resolveApiPath(path), {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -42,7 +60,7 @@ export async function* streamChat(
   path: string,
   body: { message: string; history?: unknown[] }
 ): AsyncGenerator<ChatStreamEvent> {
-  const res = await fetch(`${API_URL}${path}`, {
+  const res = await fetch(resolveApiPath(path), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({

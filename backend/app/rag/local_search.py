@@ -108,11 +108,39 @@ def product_overview_chunks() -> list[dict[str, Any]]:
     return chunks
 
 
+def _is_greeting(query: str) -> bool:
+    normalized = " ".join(query.lower().split())
+    if normalized in {"hi", "hello", "hey", "hi!", "hello!"}:
+        return True
+    tokens = _tokenize(query)
+    greetings = {"hi", "hello", "hey", "hiya", "howdy", "good", "morning", "evening", "afternoon"}
+    return bool(tokens) and tokens.issubset(greetings)
+
+
+def greeting_chunks() -> list[dict[str, Any]]:
+    return [
+        {
+            "id": "greet-001",
+            "category": "Brand",
+            "question": "Hello",
+            "answer": (
+                "Hello! Welcome to KindSkin Co. I can help with our products "
+                "(Aloe Vera Gel ₹100, Lip Balm ₹50, Abhyang Tel ₹120), ingredients, "
+                "shipping, returns, and daily skincare routines. What would you like to know?"
+            ),
+            "similarity": 0.95,
+        }
+    ]
+
+
 def keyword_search(
     query: str,
     top_k: int = 5,
     threshold: float = 0.12,
 ) -> list[dict[str, Any]]:
+    if _is_greeting(query):
+        return greeting_chunks()
+
     if _is_product_overview(query):
         return product_overview_chunks()
 
