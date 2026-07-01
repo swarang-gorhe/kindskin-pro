@@ -1,11 +1,14 @@
 import kbEntries from "@/data/knowledge-base.json";
+import {
+  chunkForStreaming,
+  formatFallback,
+  formatGreeting,
+  formatMultipleAnswers,
+  formatSingleAnswer,
+} from "@/lib/chat-format";
+import type { ChatProductLink, KbEntry } from "@/lib/chat-fallback-types";
 
-type KbEntry = {
-  id: string;
-  category: string;
-  question: string;
-  answer: string;
-};
+export type { ChatProductLink, KbEntry };
 
 const STOPWORDS = new Set([
   "a", "an", "the", "is", "are", "was", "were", "be", "been", "being",
@@ -43,23 +46,16 @@ const PRODUCT_SUMMARY_IDS = [
   "abhyang-004",
 ];
 
-const CATEGORY_TO_PRODUCT: Record<string, { slug: string; name: string }> = {
+const CATEGORY_TO_PRODUCT: Record<string, ChatProductLink> = {
   "Aloe Vera Gel": { slug: "aloe-vera-gel", name: "Aloe Vera Gel" },
   "Lip Balm": { slug: "lip-balm", name: "Nourishing Lip Balm" },
   "Abhyang Tel": { slug: "abhyang-tel", name: "Abhyang Tel" },
 };
 
-const FALLBACK =
-  "I'm here to help with KindSkin products, ingredients, shipping, and skincare tips. Try asking about Aloe Vera Gel, Lip Balm, Abhyang Tel, or our shipping policy — or take our quiz at /quiz.";
-
-const GREETING_REPLY =
-  "Hello! Welcome to KindSkin Co. I can help with our products (Aloe Vera Gel ₹100, Lip Balm ₹50, Abhyang Tel ₹120), ingredients, shipping, returns, and daily skincare routines. What would you like to know?";
-
-/** Fix common typos before search */
 function normalizeQuery(query: string): string {
   return query
     .toLowerCase()
-    .replace(/alovera|aloevera|aloevar|alovera/g, "aloe vera")
+    .replace(/alovera|aloevera|aloevar/g, "aloe vera")
     .replace(/lipbalm/g, "lip balm")
     .replace(/abhyangtel/g, "abhyang tel")
     .replace(/how much/g, "price");
@@ -81,13 +77,6 @@ function isProductOverview(query: string): boolean {
   const normalized = normalizeQuery(query).trim();
   if (normalized === "product" || normalized === "products") return true;
   return PRODUCT_OVERVIEW_PHRASES.some((p) => normalized.includes(p));
-}
-
-function productOverviewAnswer(): string {
-  const byId = Object.fromEntries((kbEntries as KbEntry[]).map((e) => [e.id, e]));
-  return PRODUCT_SUMMARY_IDS.map((id) => byId[id]?.answer)
-    .filter(Boolean)
-    .join("\n\n");
 }
 
 function keywordSearch(query: string, topK = 5): KbEntry[] {
@@ -118,7 +107,6 @@ function keywordSearch(query: string, topK = 5): KbEntry[] {
         [...queryTokens].filter((t) => aTokens.has(t)).length +
         [...queryTokens].filter((t) => cTokens.has(t)).length * 2.5;
 
-      // Fuzzy: "aloe" + "gel" in query matches Aloe Vera Gel entries
       if (queryTokens.has("aloe") || queryTokens.has("vera") || normalized.includes("aloe vera")) {
         if (entry.category === "Aloe Vera Gel") score += 5;
       }
@@ -152,9 +140,9 @@ function keywordSearch(query: string, topK = 5): KbEntry[] {
   return scored.slice(0, topK).map(({ entry }) => entry);
 }
 
-function relatedProducts(entries: KbEntry[]): { slug: string; name: string }[] {
+function relatedProducts(entries: KbEntry[]): ChatProductLink[] {
   const seen = new Set<string>();
-  const products: { slug: string; name: string }[] = [];
+  const products: ChatProductLink[] = [];
   for (const entry of entries) {
     const product = CATEGORY_TO_PRODUCT[entry.category];
     if (product && !seen.has(product.slug)) {
@@ -167,25 +155,31 @@ function relatedProducts(entries: KbEntry[]): { slug: string; name: string }[] {
 
 export function localChatAnswer(message: string): {
   content: string;
-  products: { slug: string; name: string }[];
+  products: ChatProductLink[];
 } {
   if (isGreeting(message)) {
-    return { content: GREETING_REPLY, products: [] };
+    return { content: formatGreeting(), products: [] };
   }
 
   const hits = keywordSearch(message);
   if (!hits.length) {
-    return { content: FALLBACK, products: [] };
+    return { content: formatFallback(), products: [] };
   }
 
   const products = relatedProducts(hits);
-  const content =
-    hits.length > 1 && isProductOverview(message)
-      ? hits.map((h) => h.answer).join("\n\n")
-      : hits.slice(0, 3).map((h) => h.answer).join("\n\n");
+  const overview = isProductOverview(message);
+
+  let content: string;
+  if (hits.length === 1 && !overview) {
+    content = formatSingleAnswer(hits[0]);
+  } else {
+    content = formatMultipleAnswers(hits.slice(0, overview ? hits.length : 3), overview);
+  }
 
   return { content, products };
 }
+
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 export async function* localChatStream(
   message: string
@@ -196,10 +190,20 @@ export async function* localChatStream(
   | { type: "done"; sources: unknown[]; cached: boolean }
 > {
   yield { type: "status", phase: "retrieving" };
+  await sleep(280);
+
   const { content, products } = localChatAnswer(message);
+
+  yield { type: "status", phase: "generating" };
+
   for (const product of products) {
     yield { type: "product", ...product };
   }
-  yield { type: "token", content };
+
+  for (const chunk of chunkForStreaming(content)) {
+    yield { type: "token", content: chunk };
+    await sleep(chunk.includes("\n") ? 40 : 18);
+  }
+
   yield { type: "done", sources: [], cached: true };
 }
