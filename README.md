@@ -78,14 +78,15 @@ Split deployment: **Vercel** hosts `/frontend` (Next.js), **Railway** hosts `/ba
 ### Vercel (Frontend)
 
 1. New Project → import GitHub repo
-2. **Root Directory:** set to `frontend` (Edit → Root Directory → `frontend`)
+2. **Root Directory:** set to `frontend` (Settings → General → Root Directory → `frontend`) — **required**
 3. **Framework Preset:** Next.js (not Create React App)
-4. **Build Command:** leave default or `next build` — do **not** use `react-scripts build`
-5. **Output Directory:** leave default (empty — Next.js sets this automatically)
-6. Set environment variables from `frontend/.env.example` per environment (Production / Preview / Development)
-7. Production deploys on push to `main`; PRs get Preview deployments automatically
+4. **Build Command:** leave default (`next build`) — turn **Override OFF**
+5. **Install Command:** leave default (`npm install`) — turn **Override OFF** — do **not** use `cd frontend && npm install`
+6. **Output Directory:** leave default (empty) — turn **Override OFF**
+7. Set environment variables from `frontend/.env.example` per environment (Production / Preview / Development)
+8. Production deploys on push to `main`; PRs get Preview deployments automatically
 
-If Root Directory is left empty, the repo-root `vercel.json` builds from `frontend/` instead.
+There is no `vercel.json` at the repo root — config lives in `frontend/vercel.json` and only applies when Root Directory is `frontend`.
 
 ### Verification checklist
 
