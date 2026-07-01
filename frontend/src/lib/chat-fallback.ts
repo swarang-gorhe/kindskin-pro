@@ -55,20 +55,30 @@ const FALLBACK =
 const GREETING_REPLY =
   "Hello! Welcome to KindSkin Co. I can help with our products (Aloe Vera Gel ₹100, Lip Balm ₹50, Abhyang Tel ₹120), ingredients, shipping, returns, and daily skincare routines. What would you like to know?";
 
+/** Fix common typos before search */
+function normalizeQuery(query: string): string {
+  return query
+    .toLowerCase()
+    .replace(/alovera|aloevera|aloevar|alovera/g, "aloe vera")
+    .replace(/lipbalm/g, "lip balm")
+    .replace(/abhyangtel/g, "abhyang tel")
+    .replace(/how much/g, "price");
+}
+
 function tokenize(text: string): Set<string> {
   const tokens = text.toLowerCase().match(/[a-z0-9]+/g) ?? [];
   return new Set(tokens.filter((t) => !STOPWORDS.has(t) && t.length > 1));
 }
 
 function isGreeting(query: string): boolean {
-  const normalized = query.toLowerCase().trim();
+  const normalized = normalizeQuery(query).trim();
   if (["hi", "hello", "hey", "hi!", "hello!"].includes(normalized)) return true;
-  const tokens = tokenize(query);
+  const tokens = tokenize(normalized);
   return tokens.size > 0 && [...tokens].every((t) => GREETINGS.has(t));
 }
 
 function isProductOverview(query: string): boolean {
-  const normalized = query.toLowerCase().trim();
+  const normalized = normalizeQuery(query).trim();
   if (normalized === "product" || normalized === "products") return true;
   return PRODUCT_OVERVIEW_PHRASES.some((p) => normalized.includes(p));
 }
@@ -81,15 +91,21 @@ function productOverviewAnswer(): string {
 }
 
 function keywordSearch(query: string, topK = 5): KbEntry[] {
-  if (isProductOverview(query)) {
+  const normalized = normalizeQuery(query);
+
+  if (isProductOverview(normalized)) {
     const byId = Object.fromEntries((kbEntries as KbEntry[]).map((e) => [e.id, e]));
     return PRODUCT_SUMMARY_IDS.map((id) => byId[id]).filter(Boolean) as KbEntry[];
   }
 
-  const queryTokens = tokenize(query);
+  const queryTokens = tokenize(normalized);
   if (queryTokens.size === 0) return [];
 
-  const priceIntent = [...queryTokens].some((t) => ["price", "cost", "much"].includes(t));
+  const priceIntent =
+    normalized.includes("price") ||
+    normalized.includes("how much") ||
+    normalized.includes("cost") ||
+    [...queryTokens].some((t) => ["price", "cost", "much"].includes(t));
 
   const scored = (kbEntries as KbEntry[])
     .map((entry) => {
@@ -101,6 +117,17 @@ function keywordSearch(query: string, topK = 5): KbEntry[] {
         [...queryTokens].filter((t) => qTokens.has(t)).length * 3 +
         [...queryTokens].filter((t) => aTokens.has(t)).length +
         [...queryTokens].filter((t) => cTokens.has(t)).length * 2.5;
+
+      // Fuzzy: "aloe" + "gel" in query matches Aloe Vera Gel entries
+      if (queryTokens.has("aloe") || queryTokens.has("vera") || normalized.includes("aloe vera")) {
+        if (entry.category === "Aloe Vera Gel") score += 5;
+      }
+      if (queryTokens.has("lip") || queryTokens.has("balm")) {
+        if (entry.category === "Lip Balm") score += 5;
+      }
+      if (queryTokens.has("abhyang") || queryTokens.has("tel") || queryTokens.has("oil")) {
+        if (entry.category === "Abhyang Tel") score += 5;
+      }
 
       const qLower = entry.question.toLowerCase();
       if (priceIntent && (qLower.includes("price") || qLower.includes("cost") || qLower.includes("how much"))) {

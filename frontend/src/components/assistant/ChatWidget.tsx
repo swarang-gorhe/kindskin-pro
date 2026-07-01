@@ -3,8 +3,8 @@
 import { useState } from "react";
 import Link from "next/link";
 import { MessageCircle, X, Send, Loader2 } from "lucide-react";
-import { streamChat, type ChatStreamEvent } from "@/lib/api";
 import { localChatStream } from "@/lib/chat-fallback";
+import type { ChatStreamEvent } from "@/lib/api";
 import { Button } from "@/components/ui/Button";
 
 type ProductLink = { slug: string; name: string };
@@ -25,18 +25,16 @@ export function ChatWidget() {
     },
   ]);
   const [input, setInput] = useState("");
-  const [phase, setPhase] = useState<"idle" | "retrieving" | "generating">("idle");
-
-  const streaming = phase !== "idle";
+  const [loading, setLoading] = useState(false);
 
   async function handleSend(e: React.FormEvent) {
     e.preventDefault();
-    if (!input.trim() || streaming) return;
+    if (!input.trim() || loading) return;
 
     const userMsg = input.trim();
     setInput("");
     setMessages((prev) => [...prev, { role: "user", content: userMsg }]);
-    setPhase("retrieving");
+    setLoading(true);
 
     let assistantContent = "";
     let products: ProductLink[] = [];
@@ -44,10 +42,6 @@ export function ChatWidget() {
     setMessages((prev) => [...prev, { role: "assistant", content: "", products: [] }]);
 
     function handleEvent(event: ChatStreamEvent) {
-      if (event.type === "status") {
-        setPhase(event.phase);
-        return;
-      }
       if (event.type === "product") {
         products = [...products, { slug: event.slug, name: event.name }];
         setMessages((prev) => {
@@ -76,25 +70,24 @@ export function ChatWidget() {
     }
 
     try {
-      for await (const event of streamChat("/api/assistant/chat", { message: userMsg })) {
-        handleEvent(event);
+      for await (const event of localChatStream(userMsg)) {
+        handleEvent(event as ChatStreamEvent);
+      }
+      if (!assistantContent.trim()) {
+        throw new Error("empty response");
       }
     } catch {
-      try {
-        for await (const event of localChatStream(userMsg)) {
-          handleEvent(event as ChatStreamEvent);
-        }
-      } catch {
-        assistantContent =
-          "I'm here to help with KindSkin products and skincare tips. Visit /products to shop, /quiz for recommendations, or /contact for support.";
-        setMessages((prev) => {
-          const updated = [...prev];
-          updated[updated.length - 1] = { role: "assistant", content: assistantContent };
-          return updated;
-        });
-      }
+      setMessages((prev) => {
+        const updated = [...prev];
+        updated[updated.length - 1] = {
+          role: "assistant",
+          content:
+            "I can help with Aloe Vera Gel (₹100), Lip Balm (₹50), and Abhyang Tel (₹120), plus shipping and skincare tips. What would you like to know?",
+        };
+        return updated;
+      });
     } finally {
-      setPhase("idle");
+      setLoading(false);
     }
   }
 
@@ -112,7 +105,6 @@ export function ChatWidget() {
         <div className="fixed bottom-24 right-6 z-50 flex w-[380px] max-w-[calc(100vw-3rem)] flex-col rounded-2xl bg-white shadow-2xl border border-forest/10 overflow-hidden">
           <div className="bg-forest px-4 py-3">
             <p className="text-sm font-medium text-cream">KindSkin Assistant</p>
-            <p className="text-xs text-cream/60">Skincare Q&A · Not medical advice</p>
           </div>
 
           <div className="flex-1 max-h-96 overflow-y-auto p-4 space-y-3">
@@ -128,10 +120,10 @@ export function ChatWidget() {
                       : "bg-cream-dark text-forest"
                   }`}
                 >
-                  {msg.content || (streaming && i === messages.length - 1 ? (
+                  {msg.content || (loading && i === messages.length - 1 ? (
                     <span className="flex items-center gap-2 text-muted">
                       <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                      {phase === "retrieving" ? "Searching knowledge base…" : "Composing answer…"}
+                      One moment…
                     </span>
                   ) : null)}
                 </div>
@@ -159,9 +151,9 @@ export function ChatWidget() {
               onChange={(e) => setInput(e.target.value)}
               placeholder="Ask about skincare..."
               className="flex-1 rounded-full bg-cream px-4 py-2 text-sm text-forest placeholder:text-muted focus:outline-none focus:ring-1 focus:ring-forest/20"
-              disabled={streaming}
+              disabled={loading}
             />
-            <Button type="submit" size="sm" disabled={streaming || !input.trim()} aria-label="Send message">
+            <Button type="submit" size="sm" disabled={loading || !input.trim()} aria-label="Send message">
               <Send className="h-4 w-4" />
             </Button>
           </form>
