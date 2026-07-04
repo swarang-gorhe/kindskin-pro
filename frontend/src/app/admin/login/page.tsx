@@ -24,15 +24,25 @@ export default function AdminLoginPage() {
       });
 
       if (signInError || !data.user) {
-        setError(signInError?.message || "Login failed");
+        setError(signInError?.message || "Invalid email or password.");
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
         .eq("id", data.user.id)
         .single();
+
+      if (profileError) {
+        await supabase.auth.signOut();
+        setError(
+          profileError.code === "PGRST205"
+            ? "Admin database not set up yet. Run Supabase migrations (profiles table)."
+            : `Profile error: ${profileError.message}`
+        );
+        return;
+      }
 
       if (profile?.role !== "admin") {
         await supabase.auth.signOut();
@@ -42,8 +52,10 @@ export default function AdminLoginPage() {
 
       router.replace("/admin");
       router.refresh();
-    } catch {
-      setError("Supabase is not configured or login failed.");
+    } catch (err) {
+      const message =
+        err instanceof Error ? err.message : "Unexpected login error.";
+      setError(message);
     } finally {
       setLoading(false);
     }
