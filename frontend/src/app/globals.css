@@ -1,17 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  --color-forest: #2d3e2f;
-  --color-forest-light: #3d5240;
-  --color-cream: #f9f9f5;
-  --color-cream-dark: #f0ede6;
-  --color-terracotta: #c4785a;
-  --color-terracotta-light: #d4956f;
-  --color-sage: #7a8b6f;
-  --color-charcoal: #2d2d2d;
-  --color-muted: #6b7264;
+  --color-forest: #1d1d1f;
+  --color-forest-light: #2d2d2f;
+  --color-cream: #fbfbfd;
+  --color-cream-dark: #f5f5f7;
+  --color-terracotta: #bf6b4a;
+  --color-terracotta-light: #d4876a;
+  --color-sage: #6e6e73;
+  --color-charcoal: #1d1d1f;
+  --color-muted: #86868b;
   --background: var(--color-cream);
   --foreground: var(--color-forest);
+  --shadow-apple: 0 2px 16px rgba(0, 0, 0, 0.06);
+  --shadow-apple-lg: 0 8px 40px rgba(0, 0, 0, 0.1);
+  --glass: rgba(255, 255, 255, 0.72);
 }
 
 @theme inline {
@@ -68,18 +71,87 @@ h1, h2, h3, h4 {
 }
 
 .section-label {
-  font-size: 0.7rem;
+  font-size: 0.68rem;
   font-weight: 600;
-  letter-spacing: 0.2em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--color-sage);
+  color: var(--color-muted);
 }
 
 .card-soft {
   background: white;
-  border-radius: 1rem;
-  box-shadow: 0 4px 24px rgba(45, 62, 47, 0.06);
-  border: 1px solid rgba(45, 62, 47, 0.06);
+  border-radius: 1.25rem;
+  box-shadow: var(--shadow-apple);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.glass {
+  background: var(--glass);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+}
+
+.shadow-apple {
+  box-shadow: var(--shadow-apple);
+}
+
+.shadow-apple-lg {
+  box-shadow: var(--shadow-apple-lg);
+}
+
+.chat-panel {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(40px) saturate(180%);
+  -webkit-backdrop-filter: blur(40px) saturate(180%);
+  border-radius: 1.5rem;
+  box-shadow: var(--shadow-apple-lg);
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .chat-panel {
+    border-radius: 1.25rem 1.25rem 0 0;
+    max-width: 100%;
+  }
+}
+
+.chat-input {
+  background: rgba(0, 0, 0, 0.04);
+  border: 1px solid transparent;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.chat-input:focus {
+  outline: none;
+  background: white;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.chat-dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--color-muted);
+  animation: chat-bounce 1.2s infinite ease-in-out;
+}
+
+.animation-delay-150 { animation-delay: 0.15s; }
+.animation-delay-300 { animation-delay: 0.3s; }
+
+@keyframes chat-bounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+@keyframes chat-in {
+  from { opacity: 0; transform: translateY(16px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.animate-chat-in {
+  animation: chat-in 0.35s cubic-bezier(0.25, 0.1, 0.25, 1) forwards;
 }
 
 .prose-content h2 {

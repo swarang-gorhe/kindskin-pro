@@ -23,8 +23,8 @@ export function Header() {
   const itemCount = useCartStore((s) => s.itemCount());
 
   return (
-    <header className="sticky top-0 z-50 bg-cream/95 backdrop-blur-md border-b border-forest/5">
-      <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-3">
+    <header className="sticky top-0 z-50 glass border-b border-black/[0.06]">
+      <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-3.5">
         <Logo priority className="justify-self-start" />
 
         <nav className="hidden lg:flex items-center gap-6 xl:gap-8" aria-label="Main navigation">
@@ -33,7 +33,7 @@ export function Header() {
               key={link.label}
               href={link.href}
               className={cn(
-                "flex items-center gap-1 text-sm font-medium transition-colors hover:text-forest",
+                "flex items-center gap-1 text-[13px] font-medium tracking-tight transition-colors hover:text-forest",
                 pathname === link.href || (link.href !== "/" && pathname.startsWith(link.href))
                   ? "text-forest"
                   : "text-muted"

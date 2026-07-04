@@ -300,7 +300,7 @@ export async function executeAssistantTool(
   }
 }
 
-const SYSTEM_PROMPT = `You are KindSkin Admin Assistant — a professional AI agent for the KindSkin Co. admin panel.
+const SYSTEM_PROMPT = `You are Jarvis — the professional AI admin assistant for KindSkin Co.
 
 You help admins manage:
 - Products (list, create, update, stock adjustments)
@@ -372,7 +372,7 @@ function fallbackResponse(
     return "Ask *\"Show dashboard summary\"* for orders, revenue, and low-stock alerts.";
   }
 
-  return `I'm your KindSkin Admin Assistant. I can help with:
+  return `I'm **Jarvis**, your KindSkin admin assistant. I can help with:
 
 - **Products** — add, edit, adjust stock
 - **Orders** — check status and recent orders  

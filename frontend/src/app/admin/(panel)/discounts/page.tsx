@@ -117,7 +117,8 @@ export default function AdminDiscountsPage() {
     <div className="space-y-6">
       {!tableReady && (
         <AdminStatusBanner
-          message="Discounts table not found. Run supabase/migrations/005_discounts.sql in Supabase SQL Editor, then add SUPABASE_SERVICE_KEY on Vercel."
+          id="discounts"
+          message="Discounts table not found. Run supabase/migrations/005_discounts.sql in Supabase SQL Editor, then set SUPABASE_SERVICE_KEY on Vercel."
         />
       )}
 

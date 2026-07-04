@@ -80,8 +80,8 @@ export default function AdminOrdersPage() {
   return (
     <div className="space-y-6">
       <AdminStatusBanner
-        dataSource="live_catalog"
-        message="Orders load from Supabase when migrations are applied. Railway backend is optional — admin API now runs on Vercel."
+        id="orders"
+        message="Orders appear here once Supabase migrations are applied. Admin API runs on Vercel — no Railway needed."
       />
       <div>
         <h2 className="font-serif text-3xl text-forest">Orders</h2>
