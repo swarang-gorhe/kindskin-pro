@@ -45,3 +45,35 @@ class OrderStatusUpdate(BaseModel):
     message: str | None = None
     internal_notes: str | None = None
     tracking_number: str | None = None
+
+
+class DiscountCreate(BaseModel):
+    code: str = Field(..., min_length=2, max_length=32)
+    name: str
+    description: str = ""
+    discount_type: str = Field(..., pattern="^(percentage|fixed)$")
+    value: int = Field(..., ge=1)
+    min_order_amount: int = Field(0, ge=0)
+    max_uses: int | None = Field(None, ge=1)
+    applies_to: str = Field("all", pattern="^(all|product|category)$")
+    product_slugs: list[str] = []
+    category: str | None = None
+    is_active: bool = True
+    starts_at: str | None = None
+    ends_at: str | None = None
+
+
+class DiscountUpdate(BaseModel):
+    code: str | None = Field(None, min_length=2, max_length=32)
+    name: str | None = None
+    description: str | None = None
+    discount_type: str | None = Field(None, pattern="^(percentage|fixed)$")
+    value: int | None = Field(None, ge=1)
+    min_order_amount: int | None = Field(None, ge=0)
+    max_uses: int | None = Field(None, ge=1)
+    applies_to: str | None = Field(None, pattern="^(all|product|category)$")
+    product_slugs: list[str] | None = None
+    category: str | None = None
+    is_active: bool | None = None
+    starts_at: str | None = None
+    ends_at: str | None = None

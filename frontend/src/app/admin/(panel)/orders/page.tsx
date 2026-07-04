@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
+import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
 
 const STATUSES = [
   "",
@@ -78,6 +79,10 @@ export default function AdminOrdersPage() {
 
   return (
     <div className="space-y-6">
+      <AdminStatusBanner
+        dataSource="live_catalog"
+        message="Orders load from Supabase when migrations are applied. Railway backend is optional — admin API now runs on Vercel."
+      />
       <div>
         <h2 className="font-serif text-3xl text-forest">Orders</h2>
         <p className="text-sm text-muted mt-1">

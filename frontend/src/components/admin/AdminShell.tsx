@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { LayoutDashboard, Package, ShoppingBag, LogOut } from "lucide-react";
+import { LayoutDashboard, Package, ShoppingBag, LogOut, Tag } from "lucide-react";
 import { createClient } from "@/utils/supabase/client";
 import { ToastProvider } from "@/components/admin/Toast";
 
@@ -10,6 +10,7 @@ const NAV = [
   { href: "/admin", label: "Dashboard", icon: LayoutDashboard, exact: true },
   { href: "/admin/products", label: "Products", icon: Package },
   { href: "/admin/orders", label: "Orders", icon: ShoppingBag },
+  { href: "/admin/discounts", label: "Discounts", icon: Tag },
 ];
 
 export function AdminShell({

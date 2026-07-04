@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
+import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -34,11 +35,13 @@ export default function AdminDashboardPage() {
   const { showToast } = useToast();
   const [data, setData] = useState<DashboardSummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   useEffect(() => {
     adminFetch<DashboardSummary>("/api/admin/dashboard/summary")
       .then(setData)
       .catch((err: AdminApiError) => {
+        setError(err.message);
         showToast(err.message, "error");
       })
       .finally(() => setLoading(false));
@@ -49,14 +52,29 @@ export default function AdminDashboardPage() {
   }
 
   if (!data) {
-    return <p className="text-muted">Unable to load dashboard.</p>;
+    return (
+      <div className="space-y-4">
+        <p className="text-terracotta">Unable to load dashboard: {error}</p>
+        <p className="text-sm text-muted">
+          Ensure you are signed in as admin. If this persists, add{" "}
+          <code>SUPABASE_SERVICE_KEY</code> to Vercel environment variables.
+        </p>
+      </div>
+    );
   }
 
   return (
     <div className="space-y-8">
+      <AdminStatusBanner dataSource={data.data_source} />
+
       <div>
         <h2 className="font-serif text-3xl text-forest">Dashboard</h2>
-        <p className="text-muted text-sm mt-1">Store overview at a glance.</p>
+        <p className="text-muted text-sm mt-1">
+          {data.live_product_count ?? 0} live products ·{" "}
+          {data.data_source === "live_catalog"
+            ? "storefront catalog"
+            : "database"}
+        </p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -134,7 +152,10 @@ export default function AdminDashboardPage() {
           <h3 className="font-medium text-forest">Recent orders</h3>
         </div>
         {data.recent_orders.length === 0 ? (
-          <p className="px-5 py-8 text-sm text-muted">No orders yet.</p>
+          <p className="px-5 py-8 text-sm text-muted">
+            No orders in database yet. Customer orders appear here after
+            checkout migrations are applied.
+          </p>
         ) : (
           <table className="w-full text-sm">
             <thead className="bg-cream-dark/50 text-left text-muted">

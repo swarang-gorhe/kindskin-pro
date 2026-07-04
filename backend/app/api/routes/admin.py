@@ -8,6 +8,8 @@ from app.deps.admin_auth import AdminUser, require_admin
 from app.models.admin_schemas import (
     AdminProductCreate,
     AdminProductUpdate,
+    DiscountCreate,
+    DiscountUpdate,
     OrderStatusUpdate,
     StockAdjustRequest,
 )
@@ -23,6 +25,12 @@ from app.services.admin_products import (
     deactivate_product,
     list_products,
     update_product,
+)
+from app.services.admin_discounts import (
+    create_discount,
+    deactivate_discount,
+    list_discounts,
+    update_discount,
 )
 from app.services.ai import generate_article_draft
 from app.services.stock import InsufficientStockError
@@ -159,6 +167,58 @@ async def admin_update_order_status(
     try:
         order = await update_order_status(order_id, body, admin.id)
         return {"status": "ok", "order": order}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.get("/discounts")
+@limiter.limit("60/minute")
+async def admin_list_discounts(
+    request: Request,
+    admin: AdminUser = Depends(require_admin),
+):
+    return {"discounts": await list_discounts()}
+
+
+@router.post("/discounts")
+@limiter.limit("30/minute")
+async def admin_create_discount(
+    request: Request,
+    body: DiscountCreate,
+    admin: AdminUser = Depends(require_admin),
+):
+    try:
+        discount = await create_discount(body, admin.id)
+        return {"status": "ok", "discount": discount}
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+
+@router.patch("/discounts/{discount_id}")
+@limiter.limit("30/minute")
+async def admin_update_discount(
+    request: Request,
+    discount_id: str,
+    body: DiscountUpdate,
+    admin: AdminUser = Depends(require_admin),
+):
+    try:
+        discount = await update_discount(discount_id, body, admin.id)
+        return {"status": "ok", "discount": discount}
+    except ValueError as exc:
+        raise HTTPException(status_code=404, detail=str(exc)) from exc
+
+
+@router.delete("/discounts/{discount_id}")
+@limiter.limit("30/minute")
+async def admin_delete_discount(
+    request: Request,
+    discount_id: str,
+    admin: AdminUser = Depends(require_admin),
+):
+    try:
+        discount = await deactivate_discount(discount_id, admin.id)
+        return {"status": "ok", "discount": discount}
     except ValueError as exc:
         raise HTTPException(status_code=404, detail=str(exc)) from exc
 

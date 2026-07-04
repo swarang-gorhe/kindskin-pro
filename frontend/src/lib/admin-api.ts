@@ -1,5 +1,4 @@
 import { createClient } from "@/utils/supabase/client";
-import { resolveApiPath } from "./api";
 
 export class AdminApiError extends Error {
   constructor(
@@ -22,12 +21,19 @@ async function getAccessToken(): Promise<string> {
   return session.access_token;
 }
 
+/** Admin API runs on Vercel (same origin) — not the Railway backend proxy. */
+function resolveAdminPath(path: string): string {
+  const normalized = path.startsWith("/") ? path : `/${path}`;
+  if (normalized.startsWith("/api/admin")) return normalized;
+  return normalized.replace(/^\/api\//, "/api/admin/");
+}
+
 export async function adminFetch<T>(
   path: string,
   options?: RequestInit
 ): Promise<T> {
   const token = await getAccessToken();
-  const res = await fetch(resolveApiPath(path), {
+  const res = await fetch(resolveAdminPath(path), {
     ...options,
     headers: {
       "Content-Type": "application/json",
@@ -98,6 +104,28 @@ export type DashboardSummary = {
     category: string;
   }>;
   recent_orders: AdminOrderSummary[];
+  data_source?: "database" | "live_catalog";
+  backend_online?: boolean;
+  live_product_count?: number;
+};
+
+export type Discount = {
+  id: string;
+  code: string;
+  name: string;
+  description: string;
+  discount_type: "percentage" | "fixed";
+  value: number;
+  min_order_amount: number;
+  max_uses: number | null;
+  uses_count: number;
+  applies_to: "all" | "product" | "category";
+  product_slugs: string[];
+  category: string | null;
+  is_active: boolean;
+  starts_at: string | null;
+  ends_at: string | null;
+  created_at: string | null;
 };
 
 export type AdminOrderDetail = {

@@ -9,6 +9,7 @@ import {
 } from "@/lib/admin-api";
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
+import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
 
 const LOW_STOCK_THRESHOLD = 10;
 
@@ -50,14 +51,19 @@ export default function AdminProductsPage() {
   const [stockModal, setStockModal] = useState<AdminProduct | null>(null);
   const [stockChange, setStockChange] = useState({ amount: 0, note: "" });
   const [deactivateId, setDeactivateId] = useState<string | null>(null);
+  const [dataSource, setDataSource] = useState<"database" | "live_catalog">(
+    "live_catalog"
+  );
 
   const loadProducts = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await adminFetch<{ products: AdminProduct[] }>(
-        "/api/admin/products"
-      );
+      const res = await adminFetch<{
+        products: AdminProduct[];
+        source: "database" | "live_catalog";
+      }>("/api/admin/products");
       setProducts(res.products);
+      setDataSource(res.source);
     } catch (err) {
       showToast((err as AdminApiError).message, "error");
     } finally {
@@ -147,11 +153,14 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-6">
+      <AdminStatusBanner dataSource={dataSource} />
       <div className="flex items-center justify-between">
         <div>
           <h2 className="font-serif text-3xl text-forest">Products</h2>
           <p className="text-sm text-muted mt-1">
-            Manage catalog, stock, and availability.
+            {dataSource === "live_catalog"
+              ? "Live storefront catalog (Aloe, Lip Balm, Abhyang Tel)"
+              : "Synced from database"}
           </p>
         </div>
         <button
