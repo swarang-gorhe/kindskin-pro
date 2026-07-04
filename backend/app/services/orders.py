@@ -8,6 +8,7 @@ import asyncpg
 
 from app.core.config import settings
 from app.models.schemas import CheckoutRequest
+from app.services.stock import deduct_order_items, InsufficientStockError
 
 logger = logging.getLogger(__name__)
 
@@ -105,6 +106,8 @@ async def create_order(body: CheckoutRequest) -> dict:
     if settings.database_url:
         try:
             order_row = await _create_order_db(order_row, items)
+        except InsufficientStockError:
+            raise
         except Exception:
             logger.exception("DB order create failed — using in-memory store")
             _memory_orders[order_id] = order_row
@@ -160,6 +163,8 @@ async def _create_order_db(order_row: dict, items: list[dict]) -> dict:
                 "confirmed",
                 "Order confirmed — we're preparing your KindSkin products.",
             )
+
+            await deduct_order_items(conn, order_row["id"], items)
     finally:
         await conn.close()
 

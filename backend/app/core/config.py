@@ -21,7 +21,10 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     supabase_url: str = ""
     supabase_service_key: str = ""
+    supabase_jwt_secret: str = ""
     database_url: str = ""
+
+    low_stock_threshold: int = 10
 
     kb_similarity_threshold: float = 0.72
     kb_high_confidence_threshold: float = 0.92

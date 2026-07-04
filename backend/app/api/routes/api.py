@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from slowapi import Limiter
 from slowapi.util import get_remote_address
@@ -10,15 +10,16 @@ from app.models.schemas import (
     QuizRequest,
     CheckoutRequest,
     OrderTrackRequest,
-    ArticleGenerateRequest,
 )
 from app.services.quiz import generate_quiz_recommendation
-from app.services.ai import generate_article_draft
 from app.services.orders import create_order, get_order
+from app.services.stock import InsufficientStockError
 from app.rag.chat import stream_rag_chat
 from app.rag.retrieve import rag_status
+from app.api.routes.admin import router as admin_router
 
 router = APIRouter()
+router.include_router(admin_router, prefix="/admin", tags=["admin"])
 limiter = Limiter(key_func=get_remote_address)
 
 
@@ -58,7 +59,13 @@ async def newsletter_subscribe(request: Request, body: NewsletterRequest):
 @router.post("/checkout/create")
 @limiter.limit("10/minute")
 async def checkout_create(request: Request, body: CheckoutRequest):
-    return await create_order(body)
+    try:
+        return await create_order(body)
+    except InsufficientStockError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Insufficient stock for {exc.product_slug}. Only {exc.available} available.",
+        ) from exc
 
 
 @router.post("/orders/track")
@@ -79,7 +86,3 @@ async def orders_get(request: Request, order_id: str, email: str):
     return {"status": "ok", "order": order}
 
 
-@router.post("/admin/generate-article")
-@limiter.limit("5/minute")
-async def admin_generate_article(request: Request, body: ArticleGenerateRequest):
-    return await generate_article_draft(body.topic, body.category)
