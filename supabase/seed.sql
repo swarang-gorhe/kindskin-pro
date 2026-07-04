@@ -1,0 +1,1 @@
+-- Optional seed data for local development (production data is seeded via migrations).
