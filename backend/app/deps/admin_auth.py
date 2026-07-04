@@ -42,16 +42,30 @@ def has_permission(role: str, permission: str) -> bool:
     return False
 
 
+def _role_from_jwt(payload: dict) -> str | None:
+    app_meta = payload.get("app_metadata") or {}
+    if isinstance(app_meta, dict):
+        role = app_meta.get("role")
+        if isinstance(role, str) and role:
+            return role
+    return None
+
+
 async def _fetch_role(user_id: str) -> str | None:
-    conn = await get_connection()
+    if not settings.database_url:
+        return None
     try:
-        row = await conn.fetchrow(
-            "select role from profiles where id = $1",
-            user_id,
-        )
-        return row["role"] if row else None
-    finally:
-        await conn.close()
+        conn = await get_connection()
+        try:
+            row = await conn.fetchrow(
+                "select role from profiles where id = $1",
+                user_id,
+            )
+            return row["role"] if row else None
+        finally:
+            await conn.close()
+    except Exception:
+        return None
 
 
 def _decode_supabase_jwt(token: str) -> dict:
@@ -100,7 +114,7 @@ async def require_admin(authorization: str = Header(..., alias="Authorization"))
             detail="Invalid token claims",
         )
 
-    role = await _fetch_role(str(user_id))
+    role = await _fetch_role(str(user_id)) or _role_from_jwt(payload)
     if role != ADMIN_ROLE:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,

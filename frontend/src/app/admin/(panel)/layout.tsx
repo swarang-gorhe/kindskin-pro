@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { cookies } from "next/headers";
 import { createClient } from "@/utils/supabase/server";
 import { AdminShell } from "@/components/admin/AdminShell";
+import { isAdminUser } from "@/lib/admin-auth";
 
 export const metadata = {
   title: "Admin",
@@ -30,19 +31,25 @@ export default async function AdminPanelLayout({
     redirect("/admin/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role, email")
     .eq("id", user.id)
     .single();
 
-  if (profile?.role !== "admin") {
+  const profilesMissing = profileError?.code === "PGRST205";
+  if (profileError && !profilesMissing) {
     redirect("/admin/login");
   }
 
+  if (!isAdminUser(user, profile)) {
+    redirect("/admin/login");
+  }
+
+  const displayEmail =
+    profile?.email || user.email || (user.app_metadata?.email as string) || "Admin";
+
   return (
-    <AdminShell email={profile.email || user.email || "Admin"}>
-      {children}
-    </AdminShell>
+    <AdminShell email={displayEmail}>{children}</AdminShell>
   );
 }

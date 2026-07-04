@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "@/utils/supabase/client";
+import { isAdminUser } from "@/lib/admin-auth";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -34,17 +35,15 @@ export default function AdminLoginPage() {
         .eq("id", data.user.id)
         .single();
 
-      if (profileError) {
+      const profilesMissing = profileError?.code === "PGRST205";
+
+      if (profileError && !profilesMissing) {
         await supabase.auth.signOut();
-        setError(
-          profileError.code === "PGRST205"
-            ? "Admin database not set up yet. Run Supabase migrations (profiles table)."
-            : `Profile error: ${profileError.message}`
-        );
+        setError(`Profile error: ${profileError.message}`);
         return;
       }
 
-      if (profile?.role !== "admin") {
+      if (!isAdminUser(data.user, profile)) {
         await supabase.auth.signOut();
         setError("This account does not have admin access.");
         return;
