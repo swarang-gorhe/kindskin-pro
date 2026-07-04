@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { Plus, ToggleLeft, ToggleRight } from "lucide-react";
 import {
   adminFetch,
   type Discount,
@@ -9,6 +10,10 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
 import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminModal } from "@/components/admin/AdminModal";
+import { AdminActionBar, AdminActionButton } from "@/components/admin/AdminActionButton";
+import { Button } from "@/components/ui/Button";
 import { products as liveProducts } from "@/data/products";
 
 type DiscountForm = {
@@ -116,64 +121,64 @@ export default function AdminDiscountsPage() {
         />
       )}
 
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-serif text-3xl text-forest">Discounts</h2>
-          <p className="text-sm text-muted mt-1">
-            Promo codes for checkout — percentage or fixed amount off.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="rounded-lg bg-forest text-cream px-4 py-2 text-sm font-medium hover:bg-forest-light"
-        >
-          Add discount
-        </button>
-      </div>
+      <AdminPageHeader
+        title="Discounts"
+        subtitle="Promo codes for checkout — percentage or fixed amount off."
+        action={
+          <Button type="button" onClick={() => setShowForm(true)} className="gap-2">
+            <Plus size={16} />
+            Add discount
+          </Button>
+        }
+      />
 
       {loading ? (
-        <p className="text-muted">Loading discounts…</p>
+        <div className="card-soft p-12 text-center text-muted">Loading discounts…</div>
       ) : discounts.length === 0 ? (
-        <p className="text-muted">
-          No discounts yet. Create a code like KIND10 for 10% off.
-        </p>
+        <div className="card-soft p-12 text-center">
+          <p className="text-muted">
+            No discounts yet. Create a code like KIND10 for 10% off.
+          </p>
+          <Button type="button" onClick={() => setShowForm(true)} className="mt-4">
+            Create first coupon
+          </Button>
+        </div>
       ) : (
-        <div className="rounded-xl border border-cream-dark bg-cream overflow-hidden">
+        <div className="card-soft overflow-hidden">
           <table className="w-full text-sm">
-            <thead className="bg-cream-dark/50 text-left text-muted">
+            <thead className="bg-cream-dark/40 text-left text-muted border-b border-forest/5">
               <tr>
-                <th className="px-4 py-3 font-medium">Code</th>
-                <th className="px-4 py-3 font-medium">Name</th>
-                <th className="px-4 py-3 font-medium">Value</th>
-                <th className="px-4 py-3 font-medium">Min order</th>
-                <th className="px-4 py-3 font-medium">Applies to</th>
-                <th className="px-4 py-3 font-medium">Uses</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Code</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Name</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Value</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Min order</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Applies to</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Uses</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Status</th>
+                <th className="px-5 py-3.5 font-medium text-xs uppercase tracking-wider">Actions</th>
               </tr>
             </thead>
             <tbody>
               {discounts.map((d) => (
-                <tr key={d.id} className="border-t border-cream-dark">
-                  <td className="px-4 py-3 font-mono font-medium text-forest">
+                <tr key={d.id} className="border-t border-forest/5 hover:bg-cream/50 transition-colors">
+                  <td className="px-5 py-4 font-mono font-semibold text-forest">
                     {d.code}
                   </td>
-                  <td className="px-4 py-3">{d.name}</td>
-                  <td className="px-4 py-3">{formatDiscountValue(d)}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4 text-forest">{d.name}</td>
+                  <td className="px-5 py-4 font-medium">{formatDiscountValue(d)}</td>
+                  <td className="px-5 py-4 text-muted">
                     {d.min_order_amount > 0
                       ? formatPrice(d.min_order_amount)
                       : "—"}
                   </td>
-                  <td className="px-4 py-3 capitalize">{d.applies_to}</td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4 capitalize text-muted">{d.applies_to}</td>
+                  <td className="px-5 py-4 text-muted">
                     {d.uses_count}
                     {d.max_uses != null ? ` / ${d.max_uses}` : ""}
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-5 py-4">
                     <span
-                      className={`text-xs rounded-full px-2 py-0.5 ${
+                      className={`text-xs rounded-full px-2.5 py-1 font-medium ${
                         d.is_active
                           ? "bg-green-100 text-green-800"
                           : "bg-gray-100 text-gray-600"
@@ -182,14 +187,15 @@ export default function AdminDiscountsPage() {
                       {d.is_active ? "Active" : "Inactive"}
                     </span>
                   </td>
-                  <td className="px-4 py-3">
-                    <button
-                      type="button"
-                      onClick={() => toggleActive(d)}
-                      className="text-xs text-sage hover:text-forest underline"
-                    >
-                      {d.is_active ? "Deactivate" : "Activate"}
-                    </button>
+                  <td className="px-5 py-4">
+                    <AdminActionBar>
+                      <AdminActionButton
+                        icon={d.is_active ? ToggleLeft : ToggleRight}
+                        label={d.is_active ? "Pause" : "Activate"}
+                        variant={d.is_active ? "danger" : "primary"}
+                        onClick={() => toggleActive(d)}
+                      />
+                    </AdminActionBar>
                   </td>
                 </tr>
               ))}
@@ -198,13 +204,24 @@ export default function AdminDiscountsPage() {
         </div>
       )}
 
-      {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <form
-            onSubmit={handleCreate}
-            className="w-full max-w-lg rounded-xl bg-cream p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-          >
-            <h3 className="font-serif text-xl text-forest">New discount</h3>
+      <AdminModal
+        open={showForm}
+        onClose={() => setShowForm(false)}
+        title="New discount"
+        subtitle="Create a coupon code for your customers"
+        size="lg"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <Button type="button" variant="ghost" onClick={() => setShowForm(false)}>
+              Cancel
+            </Button>
+            <Button type="submit" form="discount-form" disabled={saving}>
+              {saving ? "Saving…" : "Create discount"}
+            </Button>
+          </div>
+        }
+      >
+        <form id="discount-form" onSubmit={handleCreate} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label className="block text-sm font-medium mb-1">Code</label>
@@ -217,7 +234,7 @@ export default function AdminDiscountsPage() {
                       code: e.target.value.toUpperCase(),
                     }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2 font-mono"
+                  className="admin-input font-mono"
                   placeholder="KIND10"
                 />
               </div>
@@ -229,7 +246,7 @@ export default function AdminDiscountsPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, name: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                  className="admin-input"
                 />
               </div>
             </div>
@@ -256,7 +273,7 @@ export default function AdminDiscountsPage() {
                       discount_type: e.target.value as "percentage" | "fixed",
                     }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                  className="admin-input"
                 >
                   <option value="percentage">Percentage %</option>
                   <option value="fixed">Fixed ₹</option>
@@ -272,7 +289,7 @@ export default function AdminDiscountsPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, value: Number(e.target.value) }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                  className="admin-input"
                 />
               </div>
               <div>
@@ -289,7 +306,7 @@ export default function AdminDiscountsPage() {
                       min_order_amount: Number(e.target.value),
                     }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                  className="admin-input"
                 />
               </div>
             </div>
@@ -348,30 +365,13 @@ export default function AdminDiscountsPage() {
                   onChange={(e) =>
                     setForm((f) => ({ ...f, category: e.target.value }))
                   }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                  className="admin-input"
                   placeholder="Face & Body"
                 />
               </div>
             )}
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 text-sm text-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-lg bg-forest text-cream px-4 py-2 text-sm disabled:opacity-60"
-              >
-                {saving ? "Saving…" : "Create"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
+        </form>
+      </AdminModal>
     </div>
   );
 }

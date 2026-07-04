@@ -52,8 +52,10 @@ CORS_ORIGINS=https://kindskin-pro.vercel.app,https://YOUR-VERCEL-URL.vercel.app
 FRONTEND_URL=https://kindskin-pro.vercel.app
 SUPABASE_URL=https://gcaaupopzmxxwkkjwzij.supabase.co
 OPENAI_API_KEY=your-openai-key
+SUPABASE_JWT_SECRET=your-supabase-jwt-secret
 DATABASE_URL=your-supabase-postgres-connection-string
 SUPABASE_SERVICE_KEY=your-supabase-service-role-key
+LOW_STOCK_THRESHOLD=10
 KB_SIMILARITY_THRESHOLD=0.72
 KB_HIGH_CONFIDENCE_THRESHOLD=0.92
 ```

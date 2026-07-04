@@ -10,6 +10,7 @@ import {
 import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
 import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -67,15 +68,14 @@ export default function AdminDashboardPage() {
     <div className="space-y-8">
       <AdminStatusBanner dataSource={data.data_source} />
 
-      <div>
-        <h2 className="font-serif text-3xl text-forest">Dashboard</h2>
-        <p className="text-muted text-sm mt-1">
-          {data.live_product_count ?? 0} live products ·{" "}
-          {data.data_source === "live_catalog"
+      <AdminPageHeader
+        title="Dashboard"
+        subtitle={`${data.live_product_count ?? 0} live products · ${
+          data.data_source === "live_catalog"
             ? "storefront catalog"
-            : "database"}
-        </p>
-      </div>
+            : "database"
+        }`}
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
@@ -91,10 +91,7 @@ export default function AdminDashboardPage() {
             alert: data.low_stock_count > 0,
           },
         ].map((card) => (
-          <div
-            key={card.label}
-            className="rounded-xl bg-cream border border-cream-dark p-5"
-          >
+          <div key={card.label} className="card-soft p-5">
             <p className="text-sm text-muted">{card.label}</p>
             <p
               className={`text-2xl font-semibold mt-2 ${
@@ -107,7 +104,7 @@ export default function AdminDashboardPage() {
         ))}
       </div>
 
-      <section className="rounded-xl bg-cream border border-cream-dark overflow-hidden">
+      <section className="card-soft overflow-hidden">
         <div className="px-5 py-4 border-b border-cream-dark flex items-center justify-between">
           <h3 className="font-medium text-forest">Low stock</h3>
           <span className="text-xs text-muted">
@@ -147,7 +144,7 @@ export default function AdminDashboardPage() {
         )}
       </section>
 
-      <section className="rounded-xl bg-cream border border-cream-dark overflow-hidden">
+      <section className="card-soft overflow-hidden">
         <div className="px-5 py-4 border-b border-cream-dark">
           <h3 className="font-medium text-forest">Recent orders</h3>
         </div>

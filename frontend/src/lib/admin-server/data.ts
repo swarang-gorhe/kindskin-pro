@@ -2,7 +2,7 @@ import { getLiveCatalogProducts } from "@/lib/catalog-fallback";
 import { getServiceSupabase } from "@/lib/admin-server/auth";
 import type { AdminProduct } from "@/lib/admin-api";
 
-function mapDbRow(row: Record<string, unknown>): AdminProduct {
+export function mapDbRow(row: Record<string, unknown>): AdminProduct {
   return {
     id: String(row.id),
     slug: String(row.slug),

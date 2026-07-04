@@ -3,56 +3,60 @@
 import { useCallback, useEffect, useState } from "react";
 import Image from "next/image";
 import {
+  Pencil,
+  PackagePlus,
+  SlidersHorizontal,
+  Ban,
+  Plus,
+} from "lucide-react";
+import {
   adminFetch,
   type AdminProduct,
   AdminApiError,
 } from "@/lib/admin-api";
-import { formatPrice } from "@/lib/utils";
+import { formatPrice, cn } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
 import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
+import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { AdminModal } from "@/components/admin/AdminModal";
+import {
+  AdminActionBar,
+  AdminActionButton,
+} from "@/components/admin/AdminActionButton";
+import {
+  ProductEditorForm,
+  productToEditorValues,
+  emptyEditorValues,
+  type ProductEditorValues,
+} from "@/components/admin/ProductEditorForm";
+import { Button } from "@/components/ui/Button";
 
 const LOW_STOCK_THRESHOLD = 10;
 
 function stockClass(qty: number) {
-  if (qty === 0) return "text-red-600 font-semibold";
-  if (qty < LOW_STOCK_THRESHOLD) return "text-amber-600 font-medium";
+  if (qty === 0) return "text-red-600";
+  if (qty < LOW_STOCK_THRESHOLD) return "text-amber-600";
   return "text-forest";
 }
-
-type ProductForm = {
-  slug: string;
-  name: string;
-  tagline: string;
-  description: string;
-  price: number;
-  category: string;
-  image: string;
-  stock_quantity: number;
-};
-
-const emptyForm: ProductForm = {
-  slug: "",
-  name: "",
-  tagline: "",
-  description: "",
-  price: 0,
-  category: "General",
-  image: "/images/products/aloe-vera-gel.jpg",
-  stock_quantity: 0,
-};
 
 export default function AdminProductsPage() {
   const { showToast } = useToast();
   const [products, setProducts] = useState<AdminProduct[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [form, setForm] = useState<ProductForm>(emptyForm);
-  const [saving, setSaving] = useState(false);
-  const [stockModal, setStockModal] = useState<AdminProduct | null>(null);
-  const [stockChange, setStockChange] = useState({ amount: 0, note: "" });
-  const [deactivateId, setDeactivateId] = useState<string | null>(null);
   const [dataSource, setDataSource] = useState<"database" | "live_catalog">(
     "live_catalog"
+  );
+
+  const [editorOpen, setEditorOpen] = useState(false);
+  const [editorMode, setEditorMode] = useState<"create" | "edit">("create");
+  const [editorProduct, setEditorProduct] = useState<AdminProduct | null>(null);
+  const [form, setForm] = useState<ProductEditorValues>(emptyEditorValues);
+  const [saving, setSaving] = useState(false);
+
+  const [stockModal, setStockModal] = useState<AdminProduct | null>(null);
+  const [stockChange, setStockChange] = useState({ amount: 0, note: "" });
+  const [deactivateTarget, setDeactivateTarget] = useState<AdminProduct | null>(
+    null
   );
 
   const loadProducts = useCallback(async () => {
@@ -75,22 +79,46 @@ export default function AdminProductsPage() {
     loadProducts();
   }, [loadProducts]);
 
-  async function handleCreate(e: React.FormEvent) {
+  function openCreate() {
+    setEditorMode("create");
+    setEditorProduct(null);
+    setForm(emptyEditorValues);
+    setEditorOpen(true);
+  }
+
+  function openEdit(product: AdminProduct) {
+    setEditorMode("edit");
+    setEditorProduct(product);
+    setForm(productToEditorValues(product));
+    setEditorOpen(true);
+  }
+
+  async function handleSave(e: React.FormEvent) {
     e.preventDefault();
     setSaving(true);
     try {
-      await adminFetch("/api/admin/products", {
-        method: "POST",
-        body: JSON.stringify({
-          ...form,
-          short_description: form.description.slice(0, 200),
-          images: form.image ? [form.image] : [],
-          benefits: [],
-        }),
-      });
-      showToast("Product created");
-      setShowForm(false);
-      setForm(emptyForm);
+      const payload = {
+        ...form,
+        short_description:
+          form.short_description || form.description.slice(0, 200),
+        images: form.images.length ? form.images : form.image ? [form.image] : [],
+      };
+
+      if (editorMode === "create") {
+        await adminFetch("/api/admin/products", {
+          method: "POST",
+          body: JSON.stringify(payload),
+        });
+        showToast("Product created");
+      } else if (editorProduct) {
+        await adminFetch(`/api/admin/products/${editorProduct.id}`, {
+          method: "PATCH",
+          body: JSON.stringify(payload),
+        });
+        showToast("Product updated");
+      }
+
+      setEditorOpen(false);
       await loadProducts();
     } catch (err) {
       showToast((err as AdminApiError).message, "error");
@@ -106,10 +134,10 @@ export default function AdminProductsPage() {
         body: JSON.stringify({
           change_amount: delta,
           reason: delta > 0 ? "restock" : "manual_adjustment",
-          note: delta > 0 ? "Quick restock" : "Quick adjustment",
+          note: delta > 0 ? "Quick restock (+10)" : "Quick adjustment",
         }),
       });
-      showToast("Stock updated");
+      showToast(`Stock updated for ${product.name}`);
       await loadProducts();
     } catch (err) {
       showToast((err as AdminApiError).message, "error");
@@ -138,13 +166,13 @@ export default function AdminProductsPage() {
   }
 
   async function handleDeactivate() {
-    if (!deactivateId) return;
+    if (!deactivateTarget) return;
     try {
-      await adminFetch(`/api/admin/products/${deactivateId}`, {
+      await adminFetch(`/api/admin/products/${deactivateTarget.id}`, {
         method: "DELETE",
       });
       showToast("Product deactivated");
-      setDeactivateId(null);
+      setDeactivateTarget(null);
       await loadProducts();
     } catch (err) {
       showToast((err as AdminApiError).message, "error");
@@ -152,196 +180,231 @@ export default function AdminProductsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <AdminStatusBanner dataSource={dataSource} />
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="font-serif text-3xl text-forest">Products</h2>
-          <p className="text-sm text-muted mt-1">
-            {dataSource === "live_catalog"
-              ? "Live storefront catalog (Aloe, Lip Balm, Abhyang Tel)"
-              : "Synced from database"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowForm(true)}
-          className="rounded-lg bg-forest text-cream px-4 py-2 text-sm font-medium hover:bg-forest-light"
-        >
-          Add product
-        </button>
-      </div>
+
+      <AdminPageHeader
+        title="Products"
+        subtitle={
+          dataSource === "live_catalog"
+            ? "Showing your live storefront catalog. Edit any product to sync it to the database."
+            : "Manage your full product catalog — names, images, pricing, and stock."
+        }
+        action={
+          <Button type="button" onClick={openCreate} className="gap-2">
+            <Plus size={16} />
+            Add product
+          </Button>
+        }
+      />
 
       {loading ? (
-        <p className="text-muted">Loading products…</p>
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="card-soft h-80 animate-pulse bg-cream-dark/50"
+            />
+          ))}
+        </div>
       ) : products.length === 0 ? (
-        <p className="text-muted">No products found.</p>
+        <div className="card-soft p-12 text-center">
+          <p className="text-muted">No products found.</p>
+          <Button type="button" onClick={openCreate} className="mt-4">
+            Add your first product
+          </Button>
+        </div>
       ) : (
-        <div className="rounded-xl border border-cream-dark bg-cream overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-cream-dark/50 text-left text-muted">
-              <tr>
-                <th className="px-4 py-3 font-medium">Product</th>
-                <th className="px-4 py-3 font-medium">Category</th>
-                <th className="px-4 py-3 font-medium">Price</th>
-                <th className="px-4 py-3 font-medium">Stock</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {products.map((p) => (
-                <tr key={p.id} className="border-t border-cream-dark">
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-3">
-                      {p.image && (
-                        <Image
-                          src={p.image}
-                          alt={p.name}
-                          width={40}
-                          height={40}
-                          className="rounded object-cover"
-                        />
-                      )}
-                      <span className="font-medium text-forest">{p.name}</span>
-                    </div>
-                  </td>
-                  <td className="px-4 py-3 text-muted">{p.category}</td>
-                  <td className="px-4 py-3">{formatPrice(p.price)}</td>
-                  <td className={`px-4 py-3 ${stockClass(p.stock_quantity)}`}>
-                    {p.stock_quantity}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`text-xs rounded-full px-2 py-0.5 ${
-                        p.is_active
-                          ? "bg-green-100 text-green-800"
-                          : "bg-gray-100 text-gray-600"
-                      }`}
-                    >
-                      {p.is_active ? "Active" : "Inactive"}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => quickStockAdjust(p, 10)}
-                        className="text-xs text-sage hover:text-forest"
-                      >
-                        +10
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setStockModal(p)}
-                        className="text-xs text-sage hover:text-forest underline"
-                      >
-                        Adjust
-                      </button>
-                      {p.is_active && (
-                        <button
-                          type="button"
-                          onClick={() => setDeactivateId(p.id)}
-                          className="text-xs text-terracotta hover:underline"
-                        >
-                          Deactivate
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-
-      {showForm && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <form
-            onSubmit={handleCreate}
-            className="w-full max-w-lg rounded-xl bg-cream p-6 space-y-4 max-h-[90vh] overflow-y-auto"
-          >
-            <h3 className="font-serif text-xl text-forest">Add product</h3>
-            {(
-              [
-                ["name", "Name", "text"],
-                ["slug", "Slug", "text"],
-                ["tagline", "Tagline", "text"],
-                ["category", "Category", "text"],
-                ["image", "Image URL", "text"],
-                ["price", "Price (₹)", "number"],
-                ["stock_quantity", "Initial stock", "number"],
-              ] as const
-            ).map(([key, label, type]) => (
-              <div key={key}>
-                <label className="block text-sm font-medium text-forest mb-1">
-                  {label}
-                </label>
-                <input
-                  type={type}
-                  required={key === "name" || key === "slug"}
-                  value={form[key]}
-                  onChange={(e) =>
-                    setForm((f) => ({
-                      ...f,
-                      [key]:
-                        type === "number"
-                          ? Number(e.target.value)
-                          : e.target.value,
-                    }))
-                  }
-                  className="w-full rounded-lg border border-cream-dark px-3 py-2"
-                />
+        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+          {products.map((p) => (
+            <article
+              key={p.id}
+              className="card-soft group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(45,62,47,0.12)]"
+            >
+              <div className="relative aspect-[4/3] overflow-hidden bg-cream-dark">
+                {p.image ? (
+                  <Image
+                    src={p.image}
+                    alt={p.name}
+                    fill
+                    className="object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                  />
+                ) : (
+                  <div className="flex h-full items-center justify-center text-muted text-sm">
+                    No image
+                  </div>
+                )}
+                <div className="absolute top-3 left-3 flex gap-2">
+                  <span className="rounded-full bg-white/90 backdrop-blur-sm px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider text-forest shadow-sm">
+                    {p.category}
+                  </span>
+                  <span
+                    className={cn(
+                      "rounded-full px-2.5 py-1 text-[10px] font-medium uppercase tracking-wider shadow-sm backdrop-blur-sm",
+                      p.is_active
+                        ? "bg-green-100/90 text-green-800"
+                        : "bg-gray-100/90 text-gray-600"
+                    )}
+                  >
+                    {p.is_active ? "Active" : "Inactive"}
+                  </span>
+                </div>
               </div>
-            ))}
-            <div>
-              <label className="block text-sm font-medium text-forest mb-1">
-                Description
-              </label>
-              <textarea
-                rows={3}
-                value={form.description}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, description: e.target.value }))
-                }
-                className="w-full rounded-lg border border-cream-dark px-3 py-2"
-              />
-            </div>
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setShowForm(false)}
-                className="px-4 py-2 text-sm text-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={saving}
-                className="rounded-lg bg-forest text-cream px-4 py-2 text-sm disabled:opacity-60"
-              >
-                {saving ? "Saving…" : "Create"}
-              </button>
-            </div>
-          </form>
+
+              <div className="p-5 space-y-4">
+                <div>
+                  <h3 className="font-serif text-xl text-forest">{p.name}</h3>
+                  {p.tagline && (
+                    <p className="text-xs text-muted mt-1 line-clamp-1">
+                      {p.tagline}
+                    </p>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between">
+                  <span className="text-xl font-semibold text-forest">
+                    {formatPrice(p.price)}
+                  </span>
+                  <span
+                    className={cn(
+                      "text-sm font-medium",
+                      stockClass(p.stock_quantity)
+                    )}
+                  >
+                    {p.stock_quantity} in stock
+                  </span>
+                </div>
+
+                {p.images.length > 1 && (
+                  <div className="flex gap-1.5 overflow-x-auto pb-1">
+                    {p.images.slice(0, 4).map((img, i) => (
+                      <div
+                        key={`${img}-${i}`}
+                        className="relative h-10 w-10 shrink-0 rounded-lg overflow-hidden border border-forest/10"
+                      >
+                        <Image
+                          src={img}
+                          alt=""
+                          fill
+                          className="object-cover"
+                          sizes="40px"
+                        />
+                      </div>
+                    ))}
+                    {p.images.length > 4 && (
+                      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-cream-dark text-[10px] text-muted">
+                        +{p.images.length - 4}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                <AdminActionBar>
+                  <AdminActionButton
+                    icon={Pencil}
+                    label="Edit"
+                    variant="primary"
+                    onClick={() => openEdit(p)}
+                  />
+                  <AdminActionButton
+                    icon={PackagePlus}
+                    label="+10"
+                    onClick={() => quickStockAdjust(p, 10)}
+                  />
+                  <AdminActionButton
+                    icon={SlidersHorizontal}
+                    label="Stock"
+                    onClick={() => setStockModal(p)}
+                  />
+                  {p.is_active && (
+                    <AdminActionButton
+                      icon={Ban}
+                      label="Hide"
+                      variant="danger"
+                      onClick={() => setDeactivateTarget(p)}
+                    />
+                  )}
+                </AdminActionBar>
+              </div>
+            </article>
+          ))}
         </div>
       )}
 
-      {stockModal && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <form
-            onSubmit={handleStockSubmit}
-            className="w-full max-w-md rounded-xl bg-cream p-6 space-y-4"
-          >
-            <h3 className="font-serif text-xl text-forest">
-              Adjust stock — {stockModal.name}
-            </h3>
+      <AdminModal
+        open={editorOpen}
+        onClose={() => setEditorOpen(false)}
+        title={editorMode === "create" ? "Add product" : "Edit product"}
+        subtitle={
+          editorMode === "edit" && editorProduct
+            ? `Editing ${editorProduct.name}`
+            : "Create a new product for your storefront"
+        }
+        size="xl"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setEditorOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              form="product-editor-form"
+              disabled={saving}
+            >
+              {saving
+                ? "Saving…"
+                : editorMode === "create"
+                  ? "Create product"
+                  : "Save changes"}
+            </Button>
+          </div>
+        }
+      >
+        <form id="product-editor-form" onSubmit={handleSave}>
+          <ProductEditorForm
+            values={form}
+            onChange={setForm}
+            mode={editorMode}
+          />
+        </form>
+      </AdminModal>
+
+      <AdminModal
+        open={!!stockModal}
+        onClose={() => setStockModal(null)}
+        title="Adjust stock"
+        subtitle={stockModal ? stockModal.name : undefined}
+        size="md"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setStockModal(null)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" form="stock-form">
+              Save
+            </Button>
+          </div>
+        }
+      >
+        {stockModal && (
+          <form id="stock-form" onSubmit={handleStockSubmit} className="space-y-4">
             <p className="text-sm text-muted">
-              Current stock: {stockModal.stock_quantity}
+              Current stock:{" "}
+              <span className="font-medium text-forest">
+                {stockModal.stock_quantity}
+              </span>
             </p>
             <div>
-              <label className="block text-sm font-medium mb-1">
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wide">
                 Change amount (+/−)
               </label>
               <input
@@ -354,12 +417,12 @@ export default function AdminProductsPage() {
                     amount: Number(e.target.value),
                   }))
                 }
-                className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                className="admin-input"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium mb-1">
-                Note (required)
+              <label className="block text-xs font-medium text-muted mb-1.5 uppercase tracking-wide">
+                Note
               </label>
               <input
                 required
@@ -367,54 +430,44 @@ export default function AdminProductsPage() {
                 onChange={(e) =>
                   setStockChange((s) => ({ ...s, note: e.target.value }))
                 }
-                className="w-full rounded-lg border border-cream-dark px-3 py-2"
+                placeholder="Reason for adjustment"
+                className="admin-input"
               />
             </div>
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setStockModal(null)}
-                className="px-4 py-2 text-sm text-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                className="rounded-lg bg-forest text-cream px-4 py-2 text-sm"
-              >
-                Save
-              </button>
-            </div>
           </form>
-        </div>
-      )}
+        )}
+      </AdminModal>
 
-      {deactivateId && (
-        <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-sm rounded-xl bg-cream p-6 space-y-4">
-            <h3 className="font-serif text-xl text-forest">Deactivate product?</h3>
-            <p className="text-sm text-muted">
-              The product will be hidden from customers but preserved for order history.
-            </p>
-            <div className="flex gap-3 justify-end">
-              <button
-                type="button"
-                onClick={() => setDeactivateId(null)}
-                className="px-4 py-2 text-sm text-muted"
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={handleDeactivate}
-                className="rounded-lg bg-terracotta text-white px-4 py-2 text-sm"
-              >
-                Deactivate
-              </button>
-            </div>
+      <AdminModal
+        open={!!deactivateTarget}
+        onClose={() => setDeactivateTarget(null)}
+        title="Hide from storefront?"
+        subtitle={
+          deactivateTarget
+            ? `${deactivateTarget.name} will be hidden from customers but kept for order history.`
+            : undefined
+        }
+        size="md"
+        footer={
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => setDeactivateTarget(null)}
+            >
+              Cancel
+            </Button>
+            <Button type="button" variant="secondary" onClick={handleDeactivate}>
+              Deactivate
+            </Button>
           </div>
-        </div>
-      )}
+        }
+      >
+        <p className="text-sm text-muted leading-relaxed">
+          You can re-activate this product later by editing it and checking
+          &quot;Product is active on storefront&quot;.
+        </p>
+      </AdminModal>
     </div>
   );
 }

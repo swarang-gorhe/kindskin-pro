@@ -105,3 +105,25 @@ h1, h2, h3, h4 {
   line-height: 1.75;
   color: var(--color-muted);
 }
+
+.admin-input {
+  width: 100%;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(45, 62, 47, 0.1);
+  background: rgba(249, 249, 245, 0.6);
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+  color: var(--color-forest);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: rgba(122, 139, 111, 0.5);
+  box-shadow: 0 0 0 3px rgba(122, 139, 111, 0.15);
+}
+
+.admin-input:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
