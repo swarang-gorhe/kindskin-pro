@@ -14,14 +14,15 @@ const badges = [
 
 export function HeroSection() {
   return (
-    <section className="relative overflow-hidden bg-cream-dark">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,rgba(0,0,0,0.02),transparent_60%)]" />
+    <section className="relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-cream via-cream to-sage/5" />
+      <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-sage/8 to-transparent pointer-events-none" />
 
-      <div className="relative mx-auto max-w-7xl px-6 pt-12 pb-16 md:pt-20 md:pb-24">
+      <div className="relative mx-auto max-w-7xl px-6 pt-10 pb-14 md:pt-16 md:pb-20">
         <div className="grid lg:grid-cols-2 gap-12 lg:gap-16 items-center">
           <FadeIn>
             <p className="section-label mb-4">The Kind Way To Glow.</p>
-            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.25rem] text-forest leading-[1.08] tracking-tight">
+            <h1 className="font-serif text-4xl sm:text-5xl lg:text-[3.5rem] text-forest leading-[1.1]">
               Kind to Nature.
               <br />
               Kind to Your Skin.

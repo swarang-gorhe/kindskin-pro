@@ -23,7 +23,7 @@ export function Header() {
   const itemCount = useCartStore((s) => s.itemCount());
 
   return (
-    <header className="sticky top-0 z-50 glass border-b border-black/[0.06]">
+    <header className="sticky top-0 z-50 glass border-b border-forest/5">
       <div className="mx-auto grid max-w-7xl grid-cols-[1fr_auto_1fr] items-center gap-4 px-6 py-3.5">
         <Logo priority className="justify-self-start" />
 

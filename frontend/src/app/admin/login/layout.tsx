@@ -9,7 +9,7 @@ export default function AdminLoginLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-cream-dark flex items-center justify-center px-4">
+    <div className="min-h-screen admin-page-bg flex items-center justify-center px-4 py-12">
       {children}
     </div>
   );

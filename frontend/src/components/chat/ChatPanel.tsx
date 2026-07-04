@@ -60,14 +60,14 @@ export function ChatPanel({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center sm:items-center sm:p-6 pointer-events-none">
       <div
-        className="absolute inset-0 bg-black/20 backdrop-blur-sm pointer-events-auto"
+        className="absolute inset-0 bg-forest/25 backdrop-blur-sm pointer-events-auto"
         onClick={onClose}
         aria-hidden
       />
 
       <div className="chat-panel pointer-events-auto relative flex w-full max-w-[440px] flex-col sm:max-h-[min(85vh,640px)] max-h-[92vh] animate-chat-in">
         {/* Header */}
-        <div className="flex items-center gap-3 px-5 py-4 border-b border-black/[0.06]">
+        <div className="flex items-center gap-3 px-5 py-4 border-b border-forest/5 bg-cream/50">
           <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-forest to-forest-light text-cream shadow-sm">
             {avatar}
           </div>
@@ -80,7 +80,7 @@ export function ChatPanel({
           <button
             type="button"
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-black/[0.04] text-muted hover:bg-black/[0.08] hover:text-forest transition-colors"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-cream-dark text-muted hover:bg-sage/15 hover:text-forest transition-colors"
             aria-label="Close"
           >
             <X size={16} />
@@ -101,7 +101,7 @@ export function ChatPanel({
               )}
             >
               {msg.role === "assistant" && (
-                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-black/[0.04] text-forest">
+                <div className="mt-1 flex h-7 w-7 shrink-0 items-center justify-center rounded-xl bg-forest/8 text-forest">
                   {avatar}
                 </div>
               )}
@@ -118,7 +118,7 @@ export function ChatPanel({
                   </div>
                 ) : msg.content ? (
                   <div className="space-y-2">
-                    <div className="rounded-[20px] rounded-bl-md bg-black/[0.04] px-4 py-3 text-[14px] leading-[1.5]">
+                    <div className="rounded-[20px] rounded-bl-md bg-cream-dark/80 px-4 py-3 text-[14px] leading-[1.5] border border-forest/5">
                       <ChatMarkdown content={msg.content} />
                     </div>
                     {msg.actions && msg.actions.length > 0 && (
@@ -156,7 +156,7 @@ export function ChatPanel({
                       <a
                         key={p.slug}
                         href={`${productLinkPrefix}/${p.slug}`}
-                        className="inline-flex items-center gap-1 rounded-full bg-white border border-black/[0.08] px-3 py-1.5 text-[12px] font-medium text-forest shadow-sm hover:bg-forest hover:text-cream transition-all duration-200"
+                        className="inline-flex items-center gap-1 rounded-full bg-white border border-forest/10 px-3 py-1.5 text-[12px] font-medium text-forest shadow-soft hover:bg-forest hover:text-cream transition-all duration-200"
                       >
                         {p.name}
                         <span aria-hidden className="opacity-50">→</span>
@@ -184,7 +184,7 @@ export function ChatPanel({
                 key={s}
                 type="button"
                 onClick={() => onSuggestion?.(s)}
-                className="rounded-full border border-black/[0.08] bg-white/80 px-3 py-1.5 text-[11px] font-medium text-forest hover:bg-forest hover:text-cream transition-all duration-200"
+                className="rounded-full border border-forest/10 bg-cream/80 px-3 py-1.5 text-[11px] font-medium text-forest hover:bg-forest hover:text-cream transition-all duration-200"
               >
                 {s}
               </button>
@@ -195,7 +195,7 @@ export function ChatPanel({
         {/* Input */}
         <form
           onSubmit={onSubmit}
-          className="flex items-end gap-2 border-t border-black/[0.06] px-4 py-3.5"
+          className="flex items-end gap-2 border-t border-forest/5 bg-cream/30 px-4 py-3.5"
         >
           <textarea
             rows={1}
@@ -244,9 +244,9 @@ export function ChatFab({
     <button
       onClick={onClick}
       className={cn(
-        "fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full shadow-apple-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]",
+        "fixed bottom-6 right-6 z-40 flex items-center gap-2 rounded-full shadow-soft-lg transition-all duration-300 hover:scale-[1.03] active:scale-[0.97]",
         open
-          ? "h-12 w-12 justify-center bg-white text-forest border border-black/[0.08]"
+          ? "h-12 w-12 justify-center bg-cream text-forest border border-forest/10"
           : "h-12 pl-4 pr-5 bg-forest text-cream"
       )}
       aria-label={open ? "Close chat" : `Open ${label}`}

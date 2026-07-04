@@ -10,7 +10,7 @@ export function ProductCard({ product, compact = false }: { product: Product; co
   return (
     <Link
       href={`/products/${product.slug}`}
-      className="group flex flex-col card-soft overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-apple-lg"
+      className="group flex flex-col card-soft overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
     >
       <div className={`relative bg-white flex items-center justify-center ${compact ? "p-4" : "p-6"}`}>
         <Image

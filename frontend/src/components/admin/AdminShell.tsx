@@ -104,20 +104,20 @@ export function AdminShell({
         </aside>
 
         <div className="flex-1 flex flex-col min-w-0">
-          <header className="bg-cream/95 backdrop-blur-md border-b border-forest/5 px-8 py-4 flex items-center justify-between">
+          <header className="glass border-b border-forest/5 px-8 py-4 flex items-center justify-between">
             <div>
               <p className="section-label">KindSkin Co.</p>
               <h1 className="font-serif text-lg text-forest -mt-0.5">
                 Admin Panel
               </h1>
             </div>
-            <div className="hidden sm:flex items-center gap-2 text-xs text-muted">
-              <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
-              Live on Vercel
+            <div className="hidden sm:flex items-center gap-2 text-xs text-sage">
+              <span className="h-2 w-2 rounded-full bg-sage animate-pulse" />
+              Live
             </div>
           </header>
 
-          <main className="flex-1 p-6 md:p-8 overflow-auto bg-gradient-to-br from-cream via-cream to-sage/5">
+          <main className="flex-1 p-6 md:p-8 overflow-auto admin-page-bg">
             <div className="mx-auto max-w-7xl">{children}</div>
           </main>
         </div>

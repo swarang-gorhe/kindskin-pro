@@ -11,6 +11,7 @@ import { formatPrice } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
 import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { DbConnectionBanner } from "@/components/admin/DbConnectionBanner";
 
 function StatusBadge({ status }: { status: string }) {
   const colors: Record<string, string> = {
@@ -66,6 +67,7 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="space-y-8">
+      <DbConnectionBanner />
       <AdminStatusBanner dataSource={data.data_source} />
 
       <AdminPageHeader

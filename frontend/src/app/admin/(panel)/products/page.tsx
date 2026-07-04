@@ -18,6 +18,7 @@ import { formatPrice, cn } from "@/lib/utils";
 import { useToast } from "@/components/admin/Toast";
 import { AdminStatusBanner } from "@/components/admin/AdminStatusBanner";
 import { AdminPageHeader } from "@/components/admin/AdminPageHeader";
+import { DbConnectionBanner } from "@/components/admin/DbConnectionBanner";
 import { AdminModal } from "@/components/admin/AdminModal";
 import {
   AdminActionBar,
@@ -181,6 +182,7 @@ export default function AdminProductsPage() {
 
   return (
     <div className="space-y-8">
+      <DbConnectionBanner />
       <AdminStatusBanner dataSource={dataSource} />
 
       <AdminPageHeader
@@ -219,7 +221,7 @@ export default function AdminProductsPage() {
           {products.map((p) => (
             <article
               key={p.id}
-              className="card-soft group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-[0_16px_48px_rgba(45,62,47,0.12)]"
+              className="card-soft group overflow-hidden transition-all duration-300 hover:-translate-y-1 hover:shadow-soft-lg"
             >
               <div className="relative aspect-[4/3] overflow-hidden bg-cream-dark">
                 {p.image ? (

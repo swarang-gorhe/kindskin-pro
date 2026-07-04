@@ -14,9 +14,9 @@ const variants: Record<ButtonVariant, string> = {
     "bg-forest text-cream hover:bg-forest-light active:scale-[0.98] shadow-sm",
   secondary:
     "bg-terracotta text-white hover:bg-terracotta-light active:scale-[0.98]",
-  ghost: "bg-transparent text-forest hover:bg-black/[0.04] active:scale-[0.98]",
+  ghost: "bg-transparent text-forest hover:bg-cream-dark active:scale-[0.98]",
   outline:
-    "border border-black/[0.12] text-forest hover:bg-forest hover:text-cream active:scale-[0.98]",
+    "border border-forest/20 text-forest hover:bg-forest hover:text-cream active:scale-[0.98]",
 };
 
 const sizes: Record<ButtonSize, string> = {
