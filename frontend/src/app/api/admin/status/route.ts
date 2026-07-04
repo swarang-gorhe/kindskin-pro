@@ -3,12 +3,13 @@ import {
   unauthorized,
   getServiceSupabase,
 } from "@/lib/admin-server/auth";
+import { isServiceKeyConfigured } from "@/lib/admin-server/env";
 
 export async function GET(request: Request) {
   const admin = await verifyAdminRequest(request);
   if (!admin) return unauthorized();
 
-  const keyConfigured = Boolean(process.env.SUPABASE_SERVICE_KEY?.trim());
+  const keyConfigured = isServiceKeyConfigured();
   const service = getServiceSupabase();
 
   if (!service) {
@@ -19,9 +20,10 @@ export async function GET(request: Request) {
       product_count: 0,
       discount_count: 0,
       data_source: "live_catalog",
+      vercel_env: process.env.VERCEL_ENV ?? "unknown",
       hint: keyConfigured
-        ? "SUPABASE_SERVICE_KEY is set but invalid. Use the Service role key (not publishable/anon). Redeploy after fixing."
-        : "SUPABASE_SERVICE_KEY missing on this deployment. Add it in Vercel → redeploy (env vars do not apply until redeploy).",
+        ? "Key is set but Supabase rejected it. Use Service role key from Supabase → Settings → API (starts with sb_secret_ or eyJ…). Not the publishable/anon key."
+        : "SUPABASE_SERVICE_KEY not visible to this deployment. In Vercel: Settings → Environment Variables → add for Production → Deployments → Redeploy (not just Save).",
     });
   }
 

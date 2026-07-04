@@ -1,6 +1,7 @@
 import { createClient, type SupabaseClient, type User } from "@supabase/supabase-js";
 import { isAdminUser } from "@/lib/admin-auth";
 import { SUPABASE_PUBLISHABLE_KEY, SUPABASE_URL } from "@/utils/supabase/config";
+import { resolveServiceKey } from "@/lib/admin-server/env";
 
 export type AdminContext = { user: User; userId: string };
 
@@ -25,7 +26,7 @@ export async function verifyAdminRequest(
 }
 
 export function getServiceSupabase(): SupabaseClient | null {
-  const key = process.env.SUPABASE_SERVICE_KEY?.trim();
+  const key = resolveServiceKey();
   if (!key || !SUPABASE_URL) return null;
   return createClient(SUPABASE_URL, key, {
     auth: { persistSession: false, autoRefreshToken: false },
