@@ -31,6 +31,12 @@ export default async function AdminPanelLayout({
     redirect("/admin/login");
   }
 
+  if (isAdminUser(user, null)) {
+    const displayEmail =
+      user.email || (user.app_metadata?.email as string) || "Admin";
+    return <AdminShell email={displayEmail}>{children}</AdminShell>;
+  }
+
   const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role, email")

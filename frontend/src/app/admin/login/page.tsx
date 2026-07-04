@@ -29,6 +29,18 @@ export default function AdminLoginPage() {
         return;
       }
 
+      // Refresh session so app_metadata (admin role) is current
+      await supabase.auth.refreshSession();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (isAdminUser(user, null)) {
+        router.replace("/admin");
+        router.refresh();
+        return;
+      }
+
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("role")
